@@ -1,0 +1,57 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dod-ironbank-baseline
+  annotations:
+    policies.kyverno.io/title: DoD Platform One & Iron Bank Hardening Baseline
+    policies.kyverno.io/category: Federal Security & Compliance
+    policies.kyverno.io/severity: High
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["lakehouse-system"]
+      validate:
+        message: "Running as root is forbidden under DoD Iron Bank STIG standards."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+            containers:
+              - securityContext:
+                  runAsNonRoot: true
+
+    - name: require-read-only-rootfs
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["lakehouse-system"]
+      validate:
+        message: "Root filesystem must be read-only."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+
+    - name: disallow-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["lakehouse-system"]
+      validate:
+        message: "Privilege escalation is forbidden."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop: ["ALL"]

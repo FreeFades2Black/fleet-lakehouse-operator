@@ -1,0 +1,14 @@
+{
+  "siteId": "site03",
+  "clusterName": "cluster-prod-site03",
+  "server": "https://api.site03.federal.internal:6443",
+  "labels": {
+    "environment": "production",
+    "tier": "data-lakehouse",
+    "siteId": "site03",
+    "ring": "ring-1-core",
+    "classification": "cui-fedramp-high",
+    "region": "gov-west",
+    "storageClass": "ceph-rbd-hardened"
+  }
+}

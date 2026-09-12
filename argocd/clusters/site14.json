@@ -1,0 +1,14 @@
+{
+  "siteId": "site14",
+  "clusterName": "cluster-prod-site14",
+  "server": "https://api.site14.federal.internal:6443",
+  "labels": {
+    "environment": "production",
+    "tier": "data-lakehouse",
+    "siteId": "site14",
+    "ring": "ring-1-core",
+    "classification": "cui-fedramp-high",
+    "region": "gov-east",
+    "storageClass": "ceph-rbd-hardened"
+  }
+}

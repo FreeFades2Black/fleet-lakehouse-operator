@@ -1,0 +1,45 @@
+# Default values for lakehouse-substrate
+global:
+  securityStandard: dod-platform-one
+  fipsCompliant: true
+  storageClassName: ceph-rbd-hardened
+
+kafka:
+  replicas: 3
+  heapOpts: "-Xms4g -Xmx4g"
+  storage:
+    size: 500Gi
+  retention:
+    hours: 72
+
+trino:
+  coordinator:
+    jvm:
+      maxHeap: "16G"
+      gc: "G1GC"
+  workers:
+    replicas: 6
+    jvm:
+      maxHeap: "32G"
+  spillToDisk:
+    enabled: true
+    path: "/var/trino/spill"
+    storageSize: 200Gi
+
+spark:
+  operator:
+    enabled: true
+  sparkVersion: "3.5.1"
+  defaultDriverMemory: "4g"
+  defaultExecutorMemory: "8g"
+
+iceberg:
+  catalogType: rest
+  catalogUri: "http://nessie-catalog.lakehouse-system.svc.cluster.local:19120/api/v1"
+  warehouse: "s3a://lakehouse-warehouse/"
+
+minio:
+  mode: distributed
+  replicas: 4
+  drivesPerNode: 2
+  capacityPerDrive: 1Ti

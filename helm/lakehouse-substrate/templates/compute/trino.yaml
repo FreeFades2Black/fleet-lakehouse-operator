@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trino-coordinator
+  namespace: lakehouse-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trino-coordinator
+  template:
+    metadata:
+      labels:
+        app: trino-coordinator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: trino-coordinator
+          image: registry1.dso.mil/ironbank/opensource/trino/trino:435
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "4"
+              memory: {{ .Values.trino.coordinator.jvm.maxHeap }}
+            limits:
+              cpu: "8"
+              memory: {{ .Values.trino.coordinator.jvm.maxHeap }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: spill-volume
+              mountPath: /var/trino/spill
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: spill-volume
+          persistentVolumeClaim:
+            claimName: trino-coordinator-spill-pvc
+        - name: tmp-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trino-coordinator-spill-pvc
+  namespace: lakehouse-system
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: {{ .Values.global.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.trino.spillToDisk.storageSize }}

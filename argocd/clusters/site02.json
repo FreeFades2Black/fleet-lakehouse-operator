@@ -1,0 +1,14 @@
+{
+  "siteId": "site02",
+  "clusterName": "cluster-prod-site02",
+  "server": "https://api.site02.federal.internal:6443",
+  "labels": {
+    "environment": "production",
+    "tier": "data-lakehouse",
+    "siteId": "site02",
+    "ring": "ring-0-canary",
+    "classification": "unclassified",
+    "region": "gov-east",
+    "storageClass": "nvme-csi"
+  }
+}

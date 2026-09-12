@@ -1,0 +1,22 @@
+groups:
+  - name: fleet_delivery_alerts
+    rules:
+      - alert: FleetRolloutWaveStalled
+        expr: sum(argocd_app_info{sync_status="OutOfSync", ring="ring-0-canary"}) > 0
+        for: 10m
+        labels:
+          severity: critical
+          tier: fleet-gitops
+        annotations:
+          summary: "Canary Ring 0 rollout stalled in site {{ $labels.siteId }}"
+          description: "Canary wave upgrade failed verification. RollingSync progression halted."
+
+      - alert: CSIVolumeBindLatencyHigh
+        expr: delivery_cli_pvc_bind_latency_ms > 150
+        for: 5m
+        labels:
+          severity: warning
+          tier: storage-platform
+        annotations:
+          summary: "High PVC bind latency detected in cluster {{ $labels.siteId }}"
+          description: "CSI storage class volume provisioning latency exceeding 150ms."

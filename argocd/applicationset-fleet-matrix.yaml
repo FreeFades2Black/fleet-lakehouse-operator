@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fleet-lakehouse-platform
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        # Ring 0: Canary Sites (Immediate verification & smoke test gate)
+        - matchExpressions:
+            - key: ring
+              operator: In
+              values:
+                - ring-0-canary
+          maxUpdate: 100%
+        # Ring 1: Core Connected Production Sites (40% batch rollout with health verification)
+        - matchExpressions:
+            - key: ring
+              operator: In
+              values:
+                - ring-1-core
+          maxUpdate: 40%
+        # Ring 2: Air-Gapped & High-Security Isolated Sites (Strict serial validation)
+        - matchExpressions:
+            - key: ring
+              operator: In
+              values:
+                - ring-2-airgap
+          maxUpdate: 20%
+  generators:
+    - matrix:
+        generators:
+          # Cluster Generator targeting registered federal/DoD clusters
+          - clusters:
+              selector:
+                matchLabels:
+                  environment: production
+                  tier: data-lakehouse
+          # Git Generator selecting ring-specific Kustomize overlays
+          - git:
+              repoURL: https://github.com/FreeFades2Black/fleet-lakehouse-operator.git
+              revision: HEAD
+              files:
+                - path: "argocd/clusters/{{metadata.labels.siteId}}.json"
+  template:
+    metadata:
+      name: 'lakehouse-{{name}}'
+      labels:
+        siteId: '{{metadata.labels.siteId}}'
+        ring: '{{metadata.labels.ring}}'
+        classification: '{{metadata.labels.classification}}'
+        region: '{{metadata.labels.region}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/FreeFades2Black/fleet-lakehouse-operator.git
+        targetRevision: HEAD
+        path: 'gitops/overlays/{{metadata.labels.ring}}'
+        helm:
+          valueFiles:
+            - values.yaml
+            - 'values-{{metadata.labels.classification}}.yaml'
+      destination:
+        server: '{{server}}'
+        namespace: lakehouse-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: lakehouse-substrate
+description: Production-grade Federal Data Lakehouse Substrate (Kafka, Trino, Spark, Apache Iceberg, MinIO, Nessie)
+type: application
+version: 2.4.0
+appVersion: "3.5.0"
+maintainers:
+  - name: William Free Hall (Free)
+    email: whall4.wh@gmail.com

@@ -1,0 +1,70 @@
+{
+  "title": "50-Cluster Fleet GitOps & Lakehouse Delivery Observability",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "title": "Fleet Health Overview (50 Clusters)",
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(fleet_cluster_synced_total) / 50 * 100",
+          "legendFormat": "% Fleet Synchronized"
+        }
+      ]
+    },
+    {
+      "title": "Rollout Wave Progression by Ring",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(argocd_app_info{sync_status=\"Synced\"}) by (ring)",
+          "legendFormat": "{{ring}} Synced"
+        }
+      ]
+    },
+    {
+      "title": "Synthetic Trino Query Execution Duration (s)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "delivery_cli_synthetic_query_duration_seconds",
+          "legendFormat": "p95 Query Latency"
+        }
+      ]
+    },
+    {
+      "title": "CSI Storage Driver Volume Bind Latency (ms)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "delivery_cli_pvc_bind_latency_ms",
+          "legendFormat": "p95 Bind Latency"
+        }
+      ]
+    }
+  ]
+}

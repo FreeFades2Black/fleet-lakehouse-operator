@@ -1,0 +1,14 @@
+{
+  "siteId": "site31",
+  "clusterName": "cluster-prod-site31",
+  "server": "https://api.site31.federal.internal:6443",
+  "labels": {
+    "environment": "production",
+    "tier": "data-lakehouse",
+    "siteId": "site31",
+    "ring": "ring-2-airgap",
+    "classification": "secret-isolated",
+    "region": "tactical-edge",
+    "storageClass": "ceph-rbd-hardened"
+  }
+}
