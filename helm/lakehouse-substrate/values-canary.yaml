@@ -1,0 +1,72 @@
+# values-canary.yaml
+# Lightweight configuration overrides tailored for KinD / Ephemeral Canary verification
+global:
+  environment: ring-0-canary
+  siteId: site01
+  clusterDomain: cluster.local
+  airGapped: false
+  complianceLevel: dod-stig-high
+
+kafka:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1024Mi"
+  storage:
+    type: persistent-claim
+    size: 5Gi
+    class: standard
+
+trino:
+  enabled: true
+  coordinator:
+    jvm:
+      maxHeapSize: "1G"
+      g1ReservePercent: 15
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  worker:
+    replicas: 1
+    jvm:
+      maxHeapSize: "1G"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+    spill:
+      enabled: true
+      path: "/data/trino/spill"
+      storageClass: standard
+      size: 5Gi
+
+icebergCatalog:
+  enabled: true
+  type: nessie
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+security:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  dropCapabilities:
+    - ALL

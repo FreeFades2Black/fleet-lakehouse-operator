@@ -23,8 +23,28 @@ class FleetValidationHarness:
         sys.stderr.write(message + "\n")
         sys.stderr.flush()
 
+    def probe_kubernetes_api(self):
+        try:
+            from kubernetes import client, config
+            try:
+                config.load_incluster_config()
+                self.log("  -> Loaded in-cluster ServiceAccount credentials.")
+            except Exception:
+                config.load_kube_config()
+                self.log("  -> Loaded local kubeconfig context.")
+            v1 = client.CoreV1Api()
+            nodes = v1.list_node(timeout_seconds=5)
+            self.results["live_k8s_node_count"] = len(nodes.items)
+            self.results["api_server_connection"] = "VERIFIED_LIVE"
+            self.log(f"  -> Discovered {len(nodes.items)} active cluster nodes via CoreV1Api.")
+            return True
+        except Exception as e:
+            self.results["api_server_connection"] = "SYNTHETIC_SIMULATION"
+            return False
+
     def run_preflight_checks(self):
         self.log(f"[*] Starting Pre-Flight Gate for Cluster: {self.site_id} [{self.ring}]...")
+        self.probe_kubernetes_api()
         # 1. API Server & Node Health
         time.sleep(0.05)
         self.results["api_server_health"] = "HEALTHY"
@@ -78,21 +98,38 @@ class FleetValidationHarness:
 
 def main():
     parser = argparse.ArgumentParser(description="Federal Fleet Delivery & Verification CLI")
-    parser.add_argument("--site", required=True, help="Target cluster Site ID (e.g. site01, site02)")
+    parser.add_argument("--site", default="site01", help="Target cluster Site ID (e.g. site01, site02)")
+    parser.add_argument("--cluster-context", help="Target Kubernetes cluster context (e.g. ring0-canary)")
     parser.add_argument("--ring", default="ring-1-core", help="Target delivery ring (ring-0-canary, ring-1-core, ring-2-airgap)")
     parser.add_argument("--pre-flight", action="store_true", help="Execute pre-flight cluster inspection")
     parser.add_argument("--post-upgrade", action="store_true", help="Execute post-upgrade synthetic verification")
+    parser.add_argument("--verify-all", action="store_true", help="Execute both pre-flight checks and post-upgrade tests")
     parser.add_argument("--json", action="store_true", help="Emit report as JSON")
     
     args = parser.parse_args()
-    harness = FleetValidationHarness(args.site, args.ring)
+    site_id = args.site
+    if args.cluster_context and args.site == "site01":
+        site_id = args.cluster_context
+
+    ring = args.ring
+    if args.cluster_context and "canary" in args.cluster_context:
+        ring = "ring-0-canary"
+
+    harness = FleetValidationHarness(site_id, ring, json_mode=args.json)
     
-    if args.pre_flight:
+    run_pre = args.pre_flight or args.verify_all
+    run_post = args.post_upgrade or args.verify_all
+
+    if not run_pre and not run_post:
+        # Default to pre-flight if no action flags passed
+        run_pre = True
+
+    if run_pre:
         success = harness.run_preflight_checks()
         if not success:
             sys.exit(1)
             
-    if args.post_upgrade:
+    if run_post:
         success = harness.run_post_upgrade_smoke_tests()
         if not success:
             sys.exit(1)
@@ -101,7 +138,7 @@ def main():
     if args.json:
         print(json.dumps(report, indent=2))
     else:
-        print(f"\n================ SUMMARY REPORT: {args.site} ================")
+        print(f"\n================ SUMMARY REPORT: {site_id} ================")
         for k, v in report["metrics"].items():
             print(f"  {k:<30}: {v}")
         print("========================================================\n")

@@ -52,10 +52,38 @@ def test_kyverno_ironbank_policies():
 
 def test_delivery_cli_harness():
     cli_path = os.path.join(os.path.dirname(__file__), "..", "delivery-cli", "delivery_cli.py")
-    res = subprocess.run(["python", cli_path, "--site", "site01", "--ring", "ring-0-canary", "--pre-flight", "--post-upgrade", "--json"], capture_output=True, text=True)
+    res = subprocess.run(["python", cli_path, "--cluster-context", "ring0-canary", "--verify-all", "--json"], capture_output=True, text=True)
     assert res.returncode == 0, f"Delivery CLI failed: {res.stderr}"
     data = json.loads(res.stdout)
-    assert data["siteId"] == "site01"
+    assert data["siteId"] == "ring0-canary"
     assert data["overallStatus"] == "PASSED"
     assert "pvc_bind_latency_ms" in data["metrics"]
     assert "synthetic_query_duration_s" in data["metrics"]
+
+def test_kind_cluster_config():
+    p = os.path.join(os.path.dirname(__file__), "kind-ring0-config.yaml")
+    assert os.path.exists(p)
+    with open(p, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "name: ring0-canary" in content
+    assert "role: control-plane" in content
+    assert "role: worker" in content
+    assert "ring=ring-0-canary" in content
+
+def test_dockerfile_and_packaging():
+    dockerfile = os.path.join(os.path.dirname(__file__), "..", "delivery-cli", "Dockerfile")
+    requirements = os.path.join(os.path.dirname(__file__), "..", "delivery-cli", "requirements.txt")
+    assert os.path.exists(dockerfile)
+    assert os.path.exists(requirements)
+    with open(dockerfile, "r", encoding="utf-8") as f:
+        df_content = f.read()
+    assert "FROM cgr.dev/chainguard/python:latest-dev AS builder" in df_content
+    assert "USER 65532:65532" in df_content
+    assert "ENTRYPOINT" in df_content
+
+def test_ci_workflows():
+    e2e = os.path.join(os.path.dirname(__file__), "..", ".github", "workflows", "e2e-canary.yml")
+    pkg = os.path.join(os.path.dirname(__file__), "..", ".github", "workflows", "package-oci.yml")
+    assert os.path.exists(e2e)
+    assert os.path.exists(pkg)
+

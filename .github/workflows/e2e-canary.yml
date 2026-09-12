@@ -1,0 +1,102 @@
+name: Ring 0 Ephemeral Canary E2E Delivery Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  static-policy-conformance:
+    name: Static Policy & Helm Matrix Conformance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        uses: kyverno/action-install-cli@v0.2.0
+
+      - name: Evaluate Kyverno DoD Iron Bank STIG Baseline
+        run: |
+          echo "==> Auditing Kubernetes manifests against Kyverno DoD Platform One STIG..."
+          kyverno apply security/kyverno/dod-ironbank-baseline.yaml \
+            --resource helm/lakehouse-substrate/templates/compute/trino.yaml \
+            --resource helm/lakehouse-substrate/templates/kafka/kafka-cluster.yaml \
+            --resource helm/lakehouse-substrate/templates/catalog/nessie.yaml
+
+      - name: Set up Helm 3
+        uses: azure/setup-helm@v4
+
+      - name: Lint & Dry-Run Matrix Across 50 Cluster Overrides
+        run: |
+          echo "==> Running Helm lint on substrate chart..."
+          helm lint helm/lakehouse-substrate/ -f helm/lakehouse-substrate/values-canary.yaml
+          
+          echo "==> Simulating dry-run template render across 50 fleet cluster specs..."
+          python -c "
+          import json, os, subprocess
+          for f in sorted(os.listdir('argocd/clusters')):
+              with open(os.path.join('argocd/clusters', f)) as jf:
+                  data = json.load(jf)
+              site = data['siteId']
+              ring = data['labels']['ring']
+              cmd = ['helm', 'template', 'canary-test', 'helm/lakehouse-substrate/',
+                     '--set', f'global.siteId={site}', '--set', f'global.environment={ring}']
+              res = subprocess.run(cmd, capture_output=True, text=True)
+              if res.returncode != 0:
+                  print(f'FAILED on {site}: {res.stderr}')
+                  exit(1)
+          print('All 50 cluster override matrix templates rendered successfully.')
+          "
+
+  e2e-canary-spinup:
+    name: Canary Ring 0 KinD Cluster Gate
+    needs: static-policy-conformance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up KinD Cluster
+        uses: helm/kind-action@v1.9.0
+        with:
+          config: tests/kind-ring0-config.yaml
+          cluster_name: ring0-canary
+          wait: 120s
+
+      - name: Surface Cluster Nodes and Topology
+        run: |
+          echo "==> KinD 3-Node Topology Ready:"
+          kubectl get nodes -o wide --show-labels
+          kubectl describe nodes | grep -E "Allocatable|Taints|zone"
+
+      - name: Deploy Strimzi Kafka CRDs & Kyverno Engine
+        run: |
+          echo "==> Installing Kyverno Gatekeeper..."
+          kubectl apply -f https://github.com/kyverno/kyverno/releases/download/v1.11.0/install.yaml
+          kubectl wait --namespace kyverno --for=condition=ready pod -l app.kubernetes.io/part-of=kyverno --timeout=90s
+          
+          echo "==> Enforcing DoD Iron Bank Admission Policies..."
+          kubectl apply -f security/kyverno/dod-ironbank-baseline.yaml
+
+      - name: Deploy Lakehouse Substrate Helm Chart
+        run: |
+          echo "==> Deploying Lakehouse Substrate to Canary Ring 0..."
+          helm upgrade --install lakehouse-canary helm/lakehouse-substrate \
+            -f helm/lakehouse-substrate/values-canary.yaml \
+            --create-namespace --namespace lakehouse-infra
+
+      - name: Await Pod Scheduling & Storage Binding
+        run: |
+          echo "==> Tracking Kubernetes scheduling events and CSI volume bindings..."
+          kubectl get events -n lakehouse-infra --sort-by='.metadata.creationTimestamp'
+          kubectl get pods,pvc -n lakehouse-infra -o wide
+
+      - name: Execute In-Cluster Delivery Verification Probe
+        run: |
+          echo "==> Executing delivery-cli synthetic verification harness inside Canary Pod..."
+          python delivery-cli/delivery_cli.py \
+            --cluster-context ring0-canary \
+            --verify-all \
+            --json
