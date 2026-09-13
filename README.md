@@ -2,7 +2,11 @@
 
 > Automated multi-cluster GitOps orchestration engine and verification harness designed to deploy, upgrade, and govern a distributed data lakehouse substrate (Apache Kafka, Trino, Spark, Apache Iceberg, MinIO, Project Nessie) across 50+ heterogeneous, multi-site Kubernetes clusters in federal and DoD environments.
 
-**Lead Architect:** William Free Hall (Free) • [whall4.wh@gmail.com](mailto:whall4.wh@gmail.com) • [LinkedIn](https://linkedin.com/in/william-free-hall)  
+[![Enterprise Portal](https://img.shields.io/badge/Mission_Control-Enterprise_Platform_Portal-00e5ff?style=flat-square&logo=kubernetes)](https://freefades2black.github.io/enterprise-platform-portal)
+[![Canary Gate](https://img.shields.io/badge/Canary_Gate-KinD_Passing-green?style=flat-square)](https://freefades2black.github.io/enterprise-platform-portal/fleet-gitops/canary-gate/)
+[![DoD Compliance](https://img.shields.io/badge/Security-Platform_One_STIG-red?style=flat-square)](https://freefades2black.github.io/enterprise-platform-portal/fleet-overview/compliance/)
+
+**Lead Architect:** William Free Hall (Free) • [whall4.wh@gmail.com](mailto:whall4.wh@gmail.com) • [Enterprise Platform Portal](https://freefades2black.github.io/enterprise-platform-portal)  
 **Architecture Decisions:** [docs/adr/](docs/adr/) • **Operations & Runbooks:** [operations/runbooks/](operations/runbooks/) • **Observability:** [observability/](observability/)
 
 ---
