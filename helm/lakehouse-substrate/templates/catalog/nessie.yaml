@@ -27,6 +27,7 @@ spec:
             - name: NESSIE_VERSION_STORE_TYPE
               value: ROCKSDB
           securityContext:
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             capabilities:
