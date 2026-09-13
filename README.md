@@ -35,10 +35,10 @@ flowchart TD
         SitesAirgap["25 Classified / Air-Gapped Enclaves<br/>(Serial 20% Update + Air-Gapped Registry Mirror)"]
     end
 
-    AppSet -->|Wave 1 (100%)| Ring0
-    Ring0 --> Gate0
-    Gate0 -->|Verified Passed| Ring1
-    Ring1 -->|Completed & Healthy| Ring2
+    AppSet -->|"Wave 1: 100% Rollout"| Site01 & Site02
+    Site01 & Site02 --> Gate0
+    Gate0 -->|"Verified Passed"| SitesCore
+    SitesCore -->|"Completed & Healthy"| SitesAirgap
 ```
 
 ---
