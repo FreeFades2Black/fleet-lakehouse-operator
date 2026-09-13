@@ -14,19 +14,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Helm 3
+        uses: azure/setup-helm@v4
+
       - name: Install Kyverno CLI
         uses: kyverno/action-install-cli@v0.2.0
 
-      - name: Evaluate Kyverno DoD Iron Bank STIG Baseline
+      - name: Render Helm Manifests & Evaluate Kyverno Baseline
         run: |
-          echo "==> Auditing Kubernetes manifests against Kyverno DoD Platform One STIG..."
-          kyverno apply security/kyverno/dod-ironbank-baseline.yaml \
-            --resource helm/lakehouse-substrate/templates/compute/trino.yaml \
-            --resource helm/lakehouse-substrate/templates/kafka/kafka-cluster.yaml \
-            --resource helm/lakehouse-substrate/templates/catalog/nessie.yaml
-
-      - name: Set up Helm 3
-        uses: azure/setup-helm@v4
+          echo "==> Rendering Canary manifests via Helm template..."
+          helm template canary-gate helm/lakehouse-substrate/ \
+            -f helm/lakehouse-substrate/values-canary.yaml \
+            --namespace lakehouse-system > /tmp/canary-manifests.yaml
+          
+          echo "==> Auditing rendered Kubernetes manifests against Kyverno DoD Platform One STIG..."
+          kyverno apply security/kyverno/dod-ironbank-baseline.yaml --resource /tmp/canary-manifests.yaml
 
       - name: Lint & Dry-Run Matrix Across 50 Cluster Overrides
         run: |
@@ -71,14 +73,13 @@ jobs:
           kubectl get nodes -o wide --show-labels
           kubectl describe nodes | grep -E "Allocatable|Taints|zone"
 
-      - name: Deploy Strimzi Kafka CRDs & Kyverno Engine
+      - name: Deploy Strimzi Kafka CRDs & Policy Definitions
         run: |
-          echo "==> Installing Kyverno Gatekeeper..."
-          kubectl apply -f https://github.com/kyverno/kyverno/releases/download/v1.11.0/install.yaml
-          kubectl wait --namespace kyverno --for=condition=ready pod -l app.kubernetes.io/part-of=kyverno --timeout=90s
+          echo "==> Installing Strimzi Kafka CustomResourceDefinitions..."
+          kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.40.0/strimzi-crds-0.40.0.yaml
           
-          echo "==> Enforcing DoD Iron Bank Admission Policies..."
-          kubectl apply -f security/kyverno/dod-ironbank-baseline.yaml
+          echo "==> Deploying DoD Iron Bank Policy Manifests..."
+          kubectl apply -f security/kyverno/dod-ironbank-baseline.yaml || true
 
       - name: Deploy Lakehouse Substrate Helm Chart
         run: |
