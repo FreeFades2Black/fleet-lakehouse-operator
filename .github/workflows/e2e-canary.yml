@@ -83,19 +83,25 @@ jobs:
 
       - name: Deploy Lakehouse Substrate Helm Chart
         run: |
+          echo "==> Creating target lakehouse namespaces..."
+          kubectl create namespace lakehouse-system || true
+          
           echo "==> Deploying Lakehouse Substrate to Canary Ring 0..."
           helm upgrade --install lakehouse-canary helm/lakehouse-substrate \
             -f helm/lakehouse-substrate/values-canary.yaml \
-            --create-namespace --namespace lakehouse-infra
+            --create-namespace --namespace lakehouse-system
 
       - name: Await Pod Scheduling & Storage Binding
         run: |
           echo "==> Tracking Kubernetes scheduling events and CSI volume bindings..."
-          kubectl get events -n lakehouse-infra --sort-by='.metadata.creationTimestamp'
-          kubectl get pods,pvc -n lakehouse-infra -o wide
+          kubectl get events -n lakehouse-system --sort-by='.metadata.creationTimestamp' || true
+          kubectl get pods,pvc -n lakehouse-system -o wide || true
 
       - name: Execute In-Cluster Delivery Verification Probe
         run: |
+          echo "==> Installing delivery-cli requirements..."
+          pip install -r delivery-cli/requirements.txt
+          
           echo "==> Executing delivery-cli synthetic verification harness inside Canary Pod..."
           python delivery-cli/delivery_cli.py \
             --cluster-context ring0-canary \
