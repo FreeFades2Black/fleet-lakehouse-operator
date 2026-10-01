@@ -10,6 +10,7 @@ jobs:
   static-policy-conformance:
     name: Static Policy & Helm Matrix Conformance
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -56,6 +57,7 @@ jobs:
     name: Canary Ring 0 KinD Cluster Gate
     needs: static-policy-conformance
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
