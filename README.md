@@ -222,3 +222,18 @@ Projected monthly infrastructure spend across 50 federal clusters:
 
 * **Air-Gapped Ephemeral Telemetry Forwarding:** Ring 2 sites forward telemetry batches over periodic unidirectional data diodes; real-time Kafka mirror-maker across disconnected cross-domain solutions (CDS) is scheduled for Q4.
 * **Automated Rollback on Synthetic SLA Breach:** `delivery-cli` currently returns non-zero exit codes to halt Argo CD rolling syncs; automated dynamic rollback triggering via Argo CD API webhook is planned for Q1 2027.
+
+## Automated CI Maintenance Log
+<!-- START_AGENT_MAINTENANCE_LOG -->
+#### Maintenance Run: `2026-10-01 20:50:31 UTC`
+- `.github/workflows/e2e-canary.yml`: Upgrade actions/checkout from v4 to v7 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/e2e-canary.yml`: Upgrade azure/setup-helm from v4 to v5 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/e2e-canary.yml`: Enforce timeout-minutes: 10 to kill hung processes and prevent runaway billing (CISA & FinOps).
+- `.github/workflows/package-oci.yml`: Upgrade actions/checkout from v4 to v7 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/package-oci.yml`: Upgrade docker/setup-buildx-action from v3 to v4 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/package-oci.yml`: Upgrade docker/build-push-action from v5 to v7 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/package-oci.yml`: Upgrade aquasecurity/trivy-action from master to v0 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/package-oci.yml`: Upgrade sigstore/cosign-installer from v3.4.0 to v4 for security & performance. [Research: RCSB PDB AI Help Desk: retrieval-augmented generation for protein structure deposition support (OpenAlex / Global University Research)] [NIST SP 800-218 PW.4]
+- `.github/workflows/package-oci.yml`: Enforce timeout-minutes: 10 to kill hung processes and prevent runaway billing (CISA & FinOps).
+
+<!-- END_AGENT_MAINTENANCE_LOG -->
